@@ -1,5 +1,5 @@
 import pyfastaq
-
+from cyvcf2 import VCF, Writer
 from cluster_vcf_records import vcf_file_read
 
 
@@ -24,23 +24,20 @@ def mask_vcf_file(vcf_in, mask_bed_file, vcf_out):
     # Put the coords of the mask into a set, and then for each VCF record,
     # check if the ref position(s) are in the set
     mask = load_mask_bed_file(mask_bed_file)
+    vcf_reader = VCF(vcf_in)
+    vcf_writer = Writer(vcf_out, vcf_reader)
+    for variant in vcf_reader:
+        if variant.CHROM in mask:
+            pos = int(variant.POS) - 1
+            positions_covered_by_var = range(pos, pos + len(variant.REF))
+            in_mask = any(i in mask[variant.CHROM] for i in positions_covered_by_var)
+            if in_mask:
+                continue
 
-    with pyfastaq.utils.open_file_read(vcf_in) as f_in, open(vcf_out, "w") as f_out:
-        for line in f_in:
-            if not line.startswith("#"):
-                chrom, pos, _, ref, _ = line.split("\t", maxsplit=4)
-                in_mask = False
-                if chrom in mask:
-                    pos = int(pos) - 1
-                    for i in range(pos, pos + len(ref)):
-                        if i in mask[chrom]:
-                            in_mask = True
-                            break
+        vcf_writer.write_record(variant)
 
-                    if in_mask:
-                        continue
-
-            print(line, end="", file=f_out)
+    vcf_writer.close()
+    vcf_reader.close()
 
 
 def vcf_records_are_the_same(file1, file2):

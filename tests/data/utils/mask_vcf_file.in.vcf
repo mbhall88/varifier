@@ -1,4 +1,6 @@
-#header line 1
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	sample
 ref1	15	1	T	A	.	PASS	.	GT	1/1
 ref1	29	2	T	A	.	PASS	.	GT	1/1
