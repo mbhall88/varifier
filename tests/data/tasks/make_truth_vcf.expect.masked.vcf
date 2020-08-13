@@ -1,6 +1,7 @@
 ##fileformat=VCFv4.2
 ##FILTER=<ID=PASS,Description="All filters passed">
 ##contig=<ID=ref,length=430>
+##FILTER=<ID=FAIL,Description="Failed filter">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 ##bcftools_normVersion=1.10.2 (pysam)+htslib-1.10.2 (pysam)
 ##bcftools_normCommand=norm -c x -d any -f /home/vagrant/git/varifier/tests/data/truth_variant_finding/make_truth_vcf.ref.fa -o /tmp/tmpin4g4f2q tmp.truth_variant_finding.make_truth_ref/03.probe_filtered.vcf; Date=Mon Jul  6 15:22:12 2020

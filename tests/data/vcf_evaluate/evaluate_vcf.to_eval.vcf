@@ -1,5 +1,6 @@
 ##fileformat=VCFv4.2
 ##contig=<ID=ref,length=430>
+##FILTER=<ID=FAIL,Description="All filters failed">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	sample
 ref	40	0	A	G	.	PASS	.	GT	1/1
