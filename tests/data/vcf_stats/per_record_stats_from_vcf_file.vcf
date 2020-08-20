@@ -1,3 +1,29 @@
+##fileformat=VCFv4.2
+##source=minos, version 0.10.0
+##contig=<ID=ref1,length=430>
+##contig=<ID=ref2,length=430>
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=COV,Number=R,Type=Integer,Description="Number of reads on ref and alt alleles">
+##FORMAT=<ID=FRS,Number=1,Type=Float,Description="Fraction of reads that support the genotype call">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="total read depth from gramtools">
+##FORMAT=<ID=DPF,Number=1,Type=Float,Description="Depth Fraction, defined as DP divided by mean depth">
+##FORMAT=<ID=GT_CONF,Number=1,Type=Float,Description="Genotype confidence. Difference in log likelihood of most likely and next most likely genotype">
+##FORMAT=<ID=GT_CONF_PERCENTILE,Number=1,Type=Float,Description="Percentile of GT_CONF">
+##FILTER=<ID=MIN_FRS,Description="Minimum FRS of 0.9">
+##FILTER=<ID=MIN_DP,Description="Minimum DP of 2">
+##FILTER=<ID=MIN_GCP,Description="Minimum GT_CONF_PERCENTILE of 2.5">
+##ALT=<ID=*,Description="Represents allele(s) other than observed.">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="List of Phred-scaled genotype likelihoods">
+##FORMAT=<ID=VFR_FILTER,Number=1,Type=String,Description="Initial filtering of VCF record. If PASS, then it is evaluated, otherwise is skipped">
+##FORMAT=<ID=VFR_IN_MASK,Number=1,Type=String,Description="Whether or not the variant is in the truth genome mask">
+##FORMAT=<ID=VFR_RESULT,Number=1,Type=String,Description="FP, TP, or Partial_TP when part of the allele matches the truth reference">
+##FORMAT=<ID=VFR_ALLELE_LEN,Number=1,Type=Integer,Description="Number of positions in allele that were checked if they match the truth">
+##FORMAT=<ID=VFR_ALLELE_MATCH_COUNT,Number=1,Type=String,Description="Number of positions in allele that match the truth">
+##FORMAT=<ID=VFR_ALLELE_MATCH_FRAC,Number=1,Type=String,Description="Fraction of positions in allele that match the truth">
+##FORMAT=<ID=VFR_ED_RA,Number=1,Type=String,Description="Edit distance between ref and alt allele (using the called allele where more than one alt)">
+##FORMAT=<ID=VFR_ED_TR,Number=1,Type=String,Description="Edit distance between truth and ref allele">
+##FORMAT=<ID=VFR_ED_TA,Number=1,Type=String,Description="Edit distance between truth and alt allele">
+##FORMAT=<ID=VFR_ED_SCORE,Number=1,Type=String,Description="Edit distance score">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	sample
 ref1	1	.	T	A	.	PASS	.	GT:DP:DPF:FRS:GT_CONF:GT_CONF_PERCENTILE:VFR_FILTER:VFR_ED_RA:VFR_ED_TR:VFR_ED_TA:VFR_ALLELE_LEN:VFR_ALLELE_MATCH_COUNT:VFR_ALLELE_MATCH_FRAC:VFR_IN_MASK:VFR_RESULT	1/1:10:1.1:0.6:100:0.12:PASS:1:0:1:1:0:0.0:1:FP
 ref2	2	.	T	A	.	PASS	.	GT:DP:DPF:COV:GT_CONF:GT_CONF_PERCENTILE:VFR_FILTER:VFR_ED_RA:VFR_ED_TR:VFR_ED_TA:VFR_ALLELE_LEN:VFR_ALLELE_MATCH_COUNT:VFR_ALLELE_MATCH_FRAC:VFR_IN_MASK:VFR_RESULT	0/0:70:0.97:99,1:200:0.95:PASS:1:0:1:1:0:0.0:0:FP

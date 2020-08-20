@@ -1,35 +1,37 @@
 import copy
+import math
 from operator import itemgetter
-
+from collections import Sequence
+import numpy as np
 from cluster_vcf_records import vcf_file_read
+from varifier.genotype import Genotype
+from cyvcf2 import VCF, Variant
 
 
-def _frs_from_vcf_record(record, cov_key="COV"):
+def _frs_from_vcf_record(record: Variant, cov_key="COV"):
     """Gets the FRS from a VCF record, if it exists. This tag is made by
     minos. If FRS tag not there, infers it from key given by cov_key, where
     the value should be alist of coverages for each allele.
     e.g. if COV=1,3 and GT=0/0, then FRS = 1/4"""
 
     if "FRS" in record.FORMAT:
-        if record.FORMAT["FRS"] == ".":
-            return "NA"
-        else:
-            return float(record.FORMAT["FRS"])
+        # based on the minos header definition, there will only ever be 1 value
+        frs = record.format("FRS")[0][0]
+        return "NA" if math.isnan(frs) else frs
 
     if cov_key not in record.FORMAT:
         return "NA"
 
-    genotypes = set(record.FORMAT["GT"].split("/"))
-    if "." in genotypes or len(genotypes) != 1:
+    genotype = Genotype.from_arr(record.genotypes[0])
+    if not genotype.is_hom():
         return "NA"
 
-    allele_index = int(genotypes.pop())
-    coverages = [int(x) for x in record.FORMAT[cov_key].split(",")]
+    coverages = record.format(cov_key)[0]
     total_cov = sum(coverages)
     if total_cov == 0:
         return 0
     else:
-        return coverages[allele_index] / total_cov
+        return coverages[genotype.allele_index()] / total_cov
 
 
 def per_record_stats_from_vcf_file(infile):
@@ -37,7 +39,7 @@ def per_record_stats_from_vcf_file(infile):
     Returns a list of dictionaries of stats. One dict per VCF line.
     List is sorted by ref seq name (CHROM), then position (POS)"""
     stats = []
-    wanted_keys = [
+    wanted_keys = {
         "DP",
         "DPF",
         "FRS",
@@ -52,7 +54,7 @@ def per_record_stats_from_vcf_file(infile):
         "VFR_ALLELE_MATCH_COUNT",
         "VFR_ALLELE_MATCH_FRAC",
         "VFR_RESULT",
-    ]
+    }
     key_types = {
         "DP": int,
         "DPF": float,
@@ -67,17 +69,18 @@ def per_record_stats_from_vcf_file(infile):
         "VFR_ALLELE_LEN": int,
         "VFR_ALLELE_MATCH_COUNT": int,
     }
-    header_lines, vcf_records = vcf_file_read.vcf_file_to_list(infile)
-    for record in vcf_records:
-        record_stats = {x: record.FORMAT.get(x, "NA") for x in wanted_keys}
+    for record in VCF(infile):
+        fmt = set(record.FORMAT)
+        missing_wanted_keys = wanted_keys - fmt
+        present_wanted_keys = wanted_keys - missing_wanted_keys
+        record_stats = {x: record.format(x)[0] for x in present_wanted_keys}
+        record_stats.update({k: "NA" for k in missing_wanted_keys})
         record_stats["FRS"] = _frs_from_vcf_record(record)
         record_stats["CHROM"] = record.CHROM
-        record_stats["POS"] = record.POS + 1
-        for key, key_type in key_types.items():
-            try:
-                record_stats[key] = key_type(record_stats[key])
-            except:
-                pass
+        record_stats["POS"] = record.POS
+        for key, val in record_stats.items():
+            if key in key_types and isinstance(val, (Sequence, np.ndarray)):
+                record_stats[key] = key_types[key](val[0])
 
         stats.append(record_stats)
 

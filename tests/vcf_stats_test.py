@@ -1,7 +1,8 @@
+import math
 import os
-import pytest
+from unittest.mock import patch
 
-from cluster_vcf_records import vcf_record
+import pytest
 
 from varifier import vcf_stats
 
@@ -9,19 +10,94 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(this_dir, "data", "vcf_stats")
 
 
-def test_frs_from_vcf_record():
-    record = vcf_record.VcfRecord("ref\t1\t.\tA\tT\t.\tPASS\t.\tFRS\t0.42")
-    assert vcf_stats._frs_from_vcf_record(record) == 0.42
-    record = vcf_record.VcfRecord("ref\t1\t.\tA\tT\t.\tPASS\t.\tFRS\t.")
-    assert vcf_stats._frs_from_vcf_record(record) == "NA"
-    record = vcf_record.VcfRecord("ref\t1\t.\tA\tT\t.\tPASS\t.\tGT\t0/0")
-    assert vcf_stats._frs_from_vcf_record(record) == "NA"
-    record = vcf_record.VcfRecord("ref\t1\t.\tA\tT\t.\tPASS\t.\tGT:COV\t0/0:1,3")
-    assert vcf_stats._frs_from_vcf_record(record) == 0.25
-    record = vcf_record.VcfRecord("ref\t1\t.\tA\tT\t.\tPASS\t.\tGT:COV\t./.:1,3")
-    assert vcf_stats._frs_from_vcf_record(record) == "NA"
-    record = vcf_record.VcfRecord("ref\t1\t.\tA\tT\t.\tPASS\t.\tGT:COV\t0/0:0,0")
-    assert vcf_stats._frs_from_vcf_record(record) == 0
+class TestFrsFromVcfRecord:
+    @patch("cyvcf2.Variant", create=True, autospec=True)
+    def test_frsPresentAndFloat(self, mocked_record):
+        frs = 0.42
+        frs_key = "FRS"
+        mocked_record.FORMAT = [frs_key]
+        mocked_record.format.return_value = [[frs]]
+
+        actual = vcf_stats._frs_from_vcf_record(mocked_record)
+        mocked_record.format.assert_called_once_with(frs_key)
+        expected = frs
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", create=True, autospec=True)
+    def test_frsPresentAndIsNull(self, mocked_record):
+        frs = math.nan
+        frs_key = "FRS"
+        mocked_record.FORMAT = [frs_key]
+        mocked_record.format.return_value = [[frs]]
+
+        actual = vcf_stats._frs_from_vcf_record(mocked_record)
+        mocked_record.format.assert_called_once_with(frs_key)
+        expected = "NA"
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", create=True, autospec=True)
+    def test_frsNotPresentAndCovNotPresent(self, mocked_record):
+        mocked_record.FORMAT = []
+
+        actual = vcf_stats._frs_from_vcf_record(mocked_record)
+        expected = "NA"
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", create=True, autospec=True)
+    def test_frsNotPresentButCovPresent(self, mocked_record):
+        cov_key = "COV"
+        cov = [1, 3]
+        mocked_record.FORMAT = [cov_key]
+        mocked_record.genotypes = [[0, 0, False]]
+        mocked_record.format.return_value = [cov]
+
+        actual = vcf_stats._frs_from_vcf_record(mocked_record)
+        mocked_record.format.assert_called_once_with(cov_key)
+        expected = 0.25
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", create=True, autospec=True)
+    def test_frsNotPresentCovPresentButGenotypeIsNull(self, mocked_record):
+        cov_key = "COV"
+        cov = [1, 3]
+        mocked_record.FORMAT = [cov_key]
+        mocked_record.genotypes = [[-1, -1]]
+        mocked_record.format.return_value = [cov]
+
+        actual = vcf_stats._frs_from_vcf_record(mocked_record)
+        expected = "NA"
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", create=True, autospec=True)
+    def test_frsNotPresentCovPresentButGenotypeIsHet(self, mocked_record):
+        cov_key = "COV"
+        cov = [1, 3]
+        mocked_record.FORMAT = [cov_key]
+        mocked_record.genotypes = [[0, 1]]
+        mocked_record.format.return_value = [cov]
+
+        actual = vcf_stats._frs_from_vcf_record(mocked_record)
+        expected = "NA"
+
+        assert actual == expected
+
+    @patch("cyvcf2.Variant", create=True, autospec=True)
+    def test_frsNotPresentCovPresentButCovAllZero(self, mocked_record):
+        cov_key = "COV"
+        cov = [0, 0]
+        mocked_record.FORMAT = [cov_key]
+        mocked_record.genotypes = [[0, 0]]
+        mocked_record.format.return_value = [cov]
+
+        actual = vcf_stats._frs_from_vcf_record(mocked_record)
+        expected = 0
+
+        assert actual == expected
 
 
 def test_format_dict_to_edit_dist_scores():
@@ -87,6 +163,7 @@ def test_format_dict_to_edit_dist_scores():
     }
     assert (0.75, 1) == vcf_stats.format_dict_to_edit_dist_scores(format_dict)
 
+
 def test_per_record_stats_from_vcf_file():
     infile = os.path.join(data_dir, "per_record_stats_from_vcf_file.vcf")
     expect = [
@@ -128,8 +205,12 @@ def test_per_record_stats_from_vcf_file():
         },
     ]
     got = vcf_stats.per_record_stats_from_vcf_file(infile)
-    print(got)
-    assert got == expect
+    for got_dict, expect_dict in zip(got, expect):
+        for k, v in got_dict.items():
+            if isinstance(v, str):
+                assert v == expect_dict[k]
+            else:
+                assert pytest.approx(v) == expect_dict[k]
 
 
 def test_summary_stats_from_per_record_stats():

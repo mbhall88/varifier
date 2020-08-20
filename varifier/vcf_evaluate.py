@@ -119,7 +119,7 @@ def evaluate_vcf(
     logging.info("Recall calculation done")
 
     # Gather stats and make plots
-    logging.info("Gathering stats and making plots...")
+    logging.info("Gathering stats...")
     per_record_recall_all = vcf_stats.per_record_stats_from_vcf_file(vcf_for_recall_all)
     per_record_recall_filtered = vcf_stats.per_record_stats_from_vcf_file(
         vcf_for_recall_filtered
