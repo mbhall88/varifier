@@ -1,11 +1,10 @@
 import copy
 import math
 from operator import itemgetter
-from collections import Sequence
-import numpy as np
-from cluster_vcf_records import vcf_file_read
-from varifier.genotype import Genotype
+
 from cyvcf2 import VCF, Variant
+
+from varifier.genotype import Genotype
 
 
 def _frs_from_vcf_record(record: Variant, cov_key="COV"):
@@ -78,9 +77,11 @@ def per_record_stats_from_vcf_file(infile):
         record_stats["FRS"] = _frs_from_vcf_record(record)
         record_stats["CHROM"] = record.CHROM
         record_stats["POS"] = record.POS
-        for key, val in record_stats.items():
-            if key in key_types and isinstance(val, (Sequence, np.ndarray)):
-                record_stats[key] = key_types[key](val[0])
+        for key, key_type in key_types.items():
+            try:
+                record_stats[key] = key_type(record_stats[key])
+            except:
+                pass
 
         stats.append(record_stats)
 
