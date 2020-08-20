@@ -63,4 +63,3 @@ class Genotype(NamedTuple):
                 f"got: {alleles}"
             )
         return Genotype(*alleles)
-

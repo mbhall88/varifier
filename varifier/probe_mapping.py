@@ -130,7 +130,9 @@ def evaluate_vcf_record(
                 file=map_outfile,
             )
 
-    alt_hits = [x for x in alt_hits if alt_probe.map_hit_includes_allele(x) and x.mapq > 0]
+    alt_hits = [
+        x for x in alt_hits if alt_probe.map_hit_includes_allele(x) and x.mapq > 0
+    ]
     alt_match, alt_allele_length, alt_best_hit = probe_hits_to_best_allele_counts(
         alt_probe, alt_hits, debug_outfile=map_outfile
     )

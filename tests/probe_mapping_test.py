@@ -40,7 +40,7 @@ def test_annotate_vcf_with_probe_mapping():
     tmp_vcf_revcomp = f"{tmp_vcf}.revcomp"
     tmp_map = "tmp.probe_mapping.annotate_vcf_with_probe_mapping.map"
     clean_files((tmp_vcf, tmp_vcf_revcomp, tmp_map))
-    truth_mask = {"truth":{80, 81, 82}}
+    truth_mask = {"truth": {80, 81, 82}}
     probe_mapping.annotate_vcf_with_probe_mapping(
         vcf_in,
         vcf_ref_fa,
